@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import DraggableWord from "./DraggableWord";
 import DroppableArea from "./DroppableArea";
-import "../App.css"; // Windows 95 Styles
+import "../App.css";
 
 const Question = ({ questionData, onCorrect }) => {
   const [droppedWords, setDroppedWords] = useState([]);
@@ -10,30 +10,36 @@ const Question = ({ questionData, onCorrect }) => {
   const [isLocked, setIsLocked] = useState(false);
 
   useEffect(() => {
-    if (!questionData || !questionData.correctAnswer) return;
+    if (!questionData || !Array.isArray(questionData.correctAnswer)) return;
 
-    // Ensure extraWords is always an array
-    const extraWords = questionData.extraWords || []; 
-    const allWords = [...questionData.correctAnswer, ...extraWords];
+    const extraWords = Array.isArray(questionData.extraWords) ? questionData.extraWords : [];
+    const allWords = [...questionData.correctAnswer, ...extraWords].sort(() => Math.random() - 0.5);
 
-    setShuffledWords(allWords.sort(() => Math.random() - 0.5));
+    setShuffledWords(allWords);
+    setDroppedWords([]);
+    setIsCorrect(null);
+    setIsLocked(false);
   }, [questionData]);
 
   const checkAnswer = () => {
-    if (JSON.stringify(droppedWords) === JSON.stringify(questionData.correctAnswer)) {
+    const isAnswerCorrect =
+      droppedWords.length === questionData.correctAnswer.length &&
+      droppedWords.every((word, index) => word === questionData.correctAnswer[index]);
+
+    if (isAnswerCorrect) {
       setIsCorrect(true);
-      setIsLocked(true); // Prevent further changes
-      onCorrect(); // Notify parent component
+      setIsLocked(true);
+      onCorrect();
     } else {
       setIsCorrect(false);
     }
-    setTimeout(() => setIsCorrect(null), 2000); // Hide message after 2 seconds
+
+    setTimeout(() => setIsCorrect(null), 2000);
   };
 
   return (
     <div className="question-container">
-      <h3>{questionData?.question}</h3>
-
+      <h3>{questionData?.question || "Loading question..."}</h3>
       <DroppableArea droppedWords={droppedWords} setDroppedWords={setDroppedWords} disabled={isLocked} />
 
       <div style={{ marginTop: "10px", pointerEvents: isLocked ? "none" : "auto" }}>
